@@ -56,5 +56,6 @@ app.use("/api", protectedRouter);
 
 // Root
 app.get("/", (req, res) => res.send("API is running"));
-
+const ImgRoutes = require("./routes/image.routes");
+app.use("/img", ImgRoutes);
 module.exports = app;
