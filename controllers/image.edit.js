@@ -2,7 +2,7 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs').promises;
 const Image = require('../models/image.model');
-
+let backendImg='https://mydocprofile-in.onrender.com'
 // Ensure uploads directory exists
 const ensureUploadsDir = async () => {
   const uploadsDir = path.join(__dirname, '..', 'uploads');
@@ -45,8 +45,8 @@ exports.uploadImage = async (req, res) => {
         width: metadata.width,
         height: metadata.height,
         mimetype: image.mimetype,
-        previewUrl: `http://localhost:3000/img/${image._id}/preview`,
-        downloadUrl: `http://localhost:3000/img/${image._id}/download`
+        previewUrl: `${backendImg}/img/${image._id}/preview`,
+        downloadUrl: `${backendImg}/img/${image._id}/download`
       }
     });
   } catch (error) {
@@ -117,7 +117,7 @@ exports.getImagePreview = async (req, res) => {
 //       format: path.extname(processedPath).slice(1),
 //       size: stats.size,
 //       filename: processedFilename,
-//       downloadUrl: `http://localhost:3000/img/processed/${processedFilename}`
+//       downloadUrl: `${backendImg}/img/processed/${processedFilename}`
 //     };
 
 //     // Save processed image info
@@ -210,8 +210,8 @@ exports.cropImage = async (req, res) => {
         height: metadata.height,
         format: metadata.format,
         mimeType: `image/${metadata.format}`,
-        previewUrl: `http://localhost:3000/img/${processedImage._id}/preview`,
-        downloadUrl: `http://localhost:3000/img/${processedImage._id}/download`,
+        previewUrl: `${backendImg}/img/${processedImage._id}/preview`,
+        downloadUrl: `${backendImg}/img/${processedImage._id}/download`,
         processedPath: processedPath,
         createdAt: processedImage.createdAt
       }
@@ -272,7 +272,7 @@ exports.cropImage = async (req, res) => {
 //       format: path.extname(processedPath).slice(1),
 //       size: stats.size,
 //       filename: processedFilename,
-//       downloadUrl: `http://localhost:3000/img/processed/${processedFilename}`
+//       downloadUrl: `${backendImg}/img/processed/${processedFilename}`
 //     };
 
 //     image.processedImages.push(processedImage);
@@ -384,8 +384,8 @@ exports.resizeImage = async (req, res) => {
       height: metadata.height,
       format: metadata.format,
       mimeType: `image/${metadata.format}`,
-      previewUrl: `http://localhost:3000/img/${savedImage._id}/preview`,
-      downloadUrl: `http://localhost:3000/img/${savedImage._id}/download`,
+      previewUrl: `${backendImg}/img/${savedImage._id}/preview`,
+      downloadUrl: `${backendImg}/img/${savedImage._id}/download`,
       originalWidth: image.width,
       originalHeight: image.height,
       quality: parseInt(quality),
@@ -448,7 +448,7 @@ exports.compressImage = async (req, res) => {
       height: metadata.height,
       size: stats.size,
       filename: processedFilename,
-      downloadUrl: `http://localhost:3000/img/processed/${processedFilename}`
+      downloadUrl: `${backendImg}/img/processed/${processedFilename}`
     };
 
     image.processedImages.push(processedImage);
