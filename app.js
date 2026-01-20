@@ -4,9 +4,10 @@ const passport = require("passport");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
 const cors = require("cors");
-
+const path = require('path')
 const app = express();
-
+// Serve userdoc folder as static files
+app.use('/userdoc', express.static(path.join(__dirname, 'userdoc')));
 // Load env
 dotenv.config();
 

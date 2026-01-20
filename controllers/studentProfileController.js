@@ -1,167 +1,4 @@
-// const StudentProfile = require("../models/student.profile");
-
  
-// const normalizeMarks = (gradeType, data) => {
-//   // Clean data first
-//   const cleanData = {};
-//   Object.keys(data).forEach((key) => {
-//     if (
-//       key === "total" ||
-//       key === "obtained" ||
-//       key === "percentage" ||
-//       key === "cgpa"
-//     ) {
-//       const value = data[key];
-//       // Convert string numbers to actual numbers
-//       if (typeof value === "string" && value.trim() !== "" && !isNaN(value)) {
-//         cleanData[key] = Number(value);
-//       }
-//       // Keep valid numbers
-//       else if (typeof value === "number" && !isNaN(value)) {
-//         cleanData[key] = value;
-//       }
-//       // For CGPA system, don't set total/obtained/percentage
-//       // For % system, don't set cgpa
-//       else {
-//         // Set to undefined instead of null for Mongoose to ignore
-//         cleanData[key] = undefined;
-//       }
-//     } else {
-//       cleanData[key] = data[key];
-//     }
-//   });
-
-//   if (gradeType === "CGPA") {
-//     const cgpaValue = cleanData.cgpa || 0;
-//     return {
-//       cgpa: typeof cgpaValue === "number" ? cgpaValue : Number(cgpaValue) || 0,
-//       // Set to undefined so Mongoose doesn't try to cast them
-//       total: undefined,
-//       obtained: undefined,
-//       percentage: undefined,
-//     };
-//   }
-
-//   if (gradeType === "%") {
-//     const total = Number(cleanData.total) || 0;
-//     const obtained = Number(cleanData.obtained) || 0;
-//     const percentage = total > 0 ? ((obtained / total) * 100).toFixed(2) : 0;
-
-//     return {
-//       total: total,
-//       obtained: obtained,
-//       percentage: Number(percentage) || 0,
-//       cgpa: undefined, // Set to undefined instead of null
-//     };
-//   }
-
-//   return {
-//     total: undefined,
-//     obtained: undefined,
-//     percentage: undefined,
-//     cgpa: undefined,
-//   };
-// };
-
-// const upsertStudentProfile = async (req, res) => {
-//   try {
-//     const userId = req?.user?._id || "69581865aee957f2cbebd406"; // from auth middleware
-//     const payload = req.body;
-// console.log(payload,"payload ")
-//     // Create a clean payload object
-//     const cleanPayload = JSON.parse(JSON.stringify(payload));
-//     console.log(cleanPayload,"cleanPayload")
-//     // Normalize education
-//     if (cleanPayload.education?.tenth) {
-//       cleanPayload.education.tenth.marks = normalizeMarks(
-//         cleanPayload.education.tenth.gradeType,
-//         cleanPayload.education.tenth
-//       );
-//       // Remove the temporary fields from the main object
-//       delete cleanPayload.education.tenth.total;
-//       delete cleanPayload.education.tenth.obtained;
-//       delete cleanPayload.education.tenth.percentage;
-//       delete cleanPayload.education.tenth.cgpa;
-//     }
-
-//     if (cleanPayload.education?.twelfth) {
-//       cleanPayload.education.twelfth.marks = normalizeMarks(
-//         cleanPayload.education.twelfth.gradeType,
-//         cleanPayload.education.twelfth
-//       );
-//       // Remove the temporary fields from the main object
-//       delete cleanPayload.education.twelfth.total;
-//       delete cleanPayload.education.twelfth.obtained;
-//       delete cleanPayload.education.twelfth.percentage;
-//       delete cleanPayload.education.twelfth.cgpa;
-//     }
-
-//     // Normalize qualifications
-//     if (Array.isArray(cleanPayload.qualifications)) {
-//       cleanPayload.qualifications = cleanPayload.qualifications.map((q) => {
-//         const marks = normalizeMarks(q.gradeType, q);
-//         // Remove temporary fields
-//         const { total, obtained, percentage, cgpa, ...rest } = q;
-//         return {
-//           ...rest,
-//           marks: marks,
-//         };
-//       });
-//     }
-
-//     // Also clean certificates if needed
-//     if (Array.isArray(cleanPayload.certificates)) {
-//       cleanPayload.certificates = cleanPayload.certificates.filter(
-//         (cert) => cert && cert.type
-//       );
-//     }
-
-//     console.log(
-//       "Clean payload being saved:",
-//       JSON.stringify(cleanPayload, null, 2)
-//     );
-
-//     const profile = await StudentProfile.findOneAndUpdate(
-//       { userId },
-//       { $set: cleanPayload },
-//       { new: true, upsert: true }
-//     );
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "Profile saved successfully",
-//       data: profile,
-//     });
-//   } catch (error) {
-//     console.error("Profile Error:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: error.message || "Failed to save profile",
-//     });
-//   }
-// };
-
-// const getStudentProfile = async (req, res) => {
-//   try {
-//     const userId = req?.userId; // from auth middleware
-//     const profile = await StudentProfile.findOne({ userId }).lean().exec();
-//     return res.status(200).json({
-//       success: true,
-//       message: "Profile Get successfully",
-//       data: profile,
-//     });
-//   } catch (error) {
-//     console.error("Profile Error:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// };
-
-// module.exports = { upsertStudentProfile, getStudentProfile };
-
-
 
 const StudentProfile = require("../models/student.profile");
 
@@ -201,6 +38,7 @@ const normalizeMarks = (gradeType, data = {}) => {
 
 const upsertStudentProfile = async (req, res) => {
   try {
+    console.log(req.files,"files")
     const userId = req?.userId; 
     const payload = req.body;
 
@@ -313,7 +151,59 @@ const getStudentProfile = async (req, res) => {
   }
 };
 
+
+
+// Upload single file
+uploadDocControler = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file uploaded" });
+    }
+
+    const { docType } = req; // document type
+    const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+    const fileUrl = `${baseUrl}/userdoc/${req.userId}/${req.file.filename}`;
+
+    const profile = await StudentProfile.findOne({ userId:req.userId });
+    if (!profile) {
+      return res.status(404).json({ success: false, message: "Profile not found" });
+    }
+
+    // check if certificate already exists
+    const index = profile.certificates.findIndex(c => c?.type === docType);
+console.log({
+        type:docType,
+        fileName: req.file.filename,
+        fileUrl
+      })
+    if (index !== -1) {
+      // 🔄 update existing
+      profile.certificates[index].fileName = req.file.filename;
+      profile.certificates[index].fileUrl = fileUrl;
+    } else {
+      // ➕ insert new
+      profile.certificates.push({
+        type:docType,
+        fileName: req.file.filename,
+        fileUrl
+      });
+    }
+
+    await profile.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Document uploaded successfully",
+      data: { type:docType, fileName: req.file.filename, fileUrl }
+    });
+
+  } catch (error) {
+    console.error("Upload error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   upsertStudentProfile,
-  getStudentProfile,
+  getStudentProfile,uploadDocControler
 };

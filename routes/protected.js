@@ -1,10 +1,12 @@
 const express = require("express");
 const router = express.Router();
+ 
 const {
   upsertStudentProfile,
-  getStudentProfile,
+  getStudentProfile,uploadDocControler
 } = require("../controllers/studentProfileController");
 const { authenticateToken } = require("../middleware/jwtAuth");
+const {uploadDoc}=require('../middleware/user.uploads')
 // GET /api/profile - returns the logged-in user's basic info
 // router.get("/profile", (req, res) => {
 //   if (!req.user) return res.status(401).json({ user: null });
@@ -20,5 +22,17 @@ router.get("/secret", (req, res) => {
 
 router.post("/profile-add-edit",authenticateToken, upsertStudentProfile);
 router.get("/profile", authenticateToken, getStudentProfile);
+// Fixed version
+const test = (req, res, next) => {
+  // Use query parameter since req.body is empty
+  const docType = req.query.docType || 'other';
+  
+  req.docType = docType;
+  
+  console.log("docType middleware:", req.docType);
+  
+  next(); // Don't forget this!
+};
+router.post("/upload-doc",test, authenticateToken, uploadDoc.single('file'),uploadDocControler);
 
 module.exports = router;
