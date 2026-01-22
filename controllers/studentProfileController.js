@@ -2,6 +2,9 @@
 
 const StudentProfile = require("../models/student.profile");
 
+const crypto = require("crypto");
+const ProfileShare = require("../models/profileShare");
+const mongoose = require("mongoose");
 /**
  * Normalize marks safely
  * - Accepts flat input: total, obtained, percentage, cgpa
@@ -203,7 +206,103 @@ console.log({
   }
 };
 
+
+
+const createShareLink = async (req, res) => {
+  try {
+    const userId = req.userId;
+ const expiresInHours = Number(req.body?.expiresInHours) || 24;
+    const token = crypto.randomBytes(32).toString("hex");
+
+    const expiresAt = new Date(
+      Date.now() + expiresInHours * 60 * 60 * 1000
+    );
+
+   const newP =  await ProfileShare.create({
+      userId,
+      token,
+      expiresAt
+    });
+console.log(newP)
+    const baseUrl = process.env.FRONTEND_URL;
+    const shareUrl = `${baseUrl}/share/${token}`;
+
+    return res.json({
+      success: true,
+      shareUrl,
+      expiresAt
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+
+const getSharedProfile = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    const share = await ProfileShare.findOne({
+      token,
+      isActive: true
+    });
+console.log(share,"g")
+    if (!share) {
+      return res.status(404).json({
+        success: false,
+        message: "Link expired or invalid"
+      });
+    }
+
+    if (new Date() > share.expiresAt) {
+      return res.status(410).json({
+        success: false,
+        message: "Link expired"
+      });
+    }
+
+    const buildUserIdQuery = (userId) => {
+  if (mongoose.Types.ObjectId.isValid(userId)) {
+    return {
+      $in: [userId, new mongoose.Types.ObjectId(userId)]
+    };
+  }
+  return userId;
+};
+console.log(buildUserIdQuery(share.userId),"d")
+
+    const profile = await StudentProfile.findOne({
+  userId: buildUserIdQuery(share.userId)
+}).lean();
+
+    if (!profile) {
+      return res.status(404).json({
+        success: false,
+        message: "Profile not found"
+      });
+    }
+
+    // 🔒 Remove sensitive fields
+    delete profile.personal.aadhaar;
+    delete profile.__v;
+
+    return res.json({
+      success: true,
+      data: profile
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   upsertStudentProfile,
-  getStudentProfile,uploadDocControler
+  getStudentProfile,uploadDocControler ,createShareLink ,getSharedProfile
 };

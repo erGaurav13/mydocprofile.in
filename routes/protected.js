@@ -3,7 +3,7 @@ const router = express.Router();
  
 const {
   upsertStudentProfile,
-  getStudentProfile,uploadDocControler
+  getStudentProfile,uploadDocControler ,createShareLink,getSharedProfile
 } = require("../controllers/studentProfileController");
 const { authenticateToken } = require("../middleware/jwtAuth");
 const {uploadDoc}=require('../middleware/user.uploads')
@@ -34,5 +34,8 @@ const test = (req, res, next) => {
   next(); // Don't forget this!
 };
 router.post("/upload-doc",test, authenticateToken, uploadDoc.single('file'),uploadDocControler);
+
+router.post("/share", authenticateToken, createShareLink);
+router.get("/share/:token", getSharedProfile);
 
 module.exports = router;

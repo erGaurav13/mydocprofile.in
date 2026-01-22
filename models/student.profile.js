@@ -58,7 +58,7 @@ const CertificateSchema = new mongoose.Schema(
 const StudentProfileSchema = new mongoose.Schema(
   {
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "User",
       unique: true,
       required: true,
