@@ -1,5 +1,3 @@
- 
-
 const StudentProfile = require("../models/student.profile");
 
 const crypto = require("crypto");
@@ -41,8 +39,14 @@ const normalizeMarks = (gradeType, data = {}) => {
 
 const upsertStudentProfile = async (req, res) => {
   try {
-    console.log(req.files,"files")
-    const userId = req?.userId; 
+    console.log(req.files, "files");
+    const userId = req?.userId;
+    if (!userId) {
+      return res.status(500).json({
+        success: false,
+        message: "userId required to save profile",
+      });
+    }
     const payload = req.body;
 
     // Deep clone to avoid mutation
@@ -86,13 +90,7 @@ const upsertStudentProfile = async (req, res) => {
 
         const marks = normalizeMarks(q.gradeType, q);
 
-        const {
-          total,
-          obtained,
-          percentage,
-          cgpa,
-          ...rest
-        } = q;
+        const { total, obtained, percentage, cgpa, ...rest } = q;
 
         return {
           ...rest,
@@ -108,9 +106,7 @@ const upsertStudentProfile = async (req, res) => {
       );
     }
 
-   
-
-console.log(userId,cleanPayload,"userId,payload")
+    console.log(userId, cleanPayload, "userId,payload");
     const profile = await StudentProfile.findOneAndUpdate(
       { userId },
       { $set: cleanPayload },
@@ -137,7 +133,7 @@ console.log(userId,cleanPayload,"userId,payload")
 
 const getStudentProfile = async (req, res) => {
   try {
-    const userId = req?.userId;;
+    const userId = req?.userId;
     const profile = await StudentProfile.findOne({ userId }).lean();
 
     return res.status(200).json({
@@ -154,31 +150,33 @@ const getStudentProfile = async (req, res) => {
   }
 };
 
-
-
 // Upload single file
 uploadDocControler = async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "No file uploaded" });
+      return res
+        .status(400)
+        .json({ success: false, message: "No file uploaded" });
     }
 
     const { docType } = req; // document type
     const baseUrl = process.env.BASE_URL || "http://localhost:3000";
     const fileUrl = `${baseUrl}/userdoc/${req.userId}/${req.file.filename}`;
 
-    const profile = await StudentProfile.findOne({ userId:req.userId });
+    const profile = await StudentProfile.findOne({ userId: req.userId });
     if (!profile) {
-      return res.status(404).json({ success: false, message: "Profile not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Profile not found" });
     }
 
     // check if certificate already exists
-    const index = profile.certificates.findIndex(c => c?.type === docType);
-console.log({
-        type:docType,
-        fileName: req.file.filename,
-        fileUrl
-      })
+    const index = profile.certificates.findIndex((c) => c?.type === docType);
+    console.log({
+      type: docType,
+      fileName: req.file.filename,
+      fileUrl,
+    });
     if (index !== -1) {
       // 🔄 update existing
       profile.certificates[index].fileName = req.file.filename;
@@ -186,9 +184,9 @@ console.log({
     } else {
       // ➕ insert new
       profile.certificates.push({
-        type:docType,
+        type: docType,
         fileName: req.file.filename,
-        fileUrl
+        fileUrl,
       });
     }
 
@@ -197,49 +195,43 @@ console.log({
     return res.status(200).json({
       success: true,
       message: "Document uploaded successfully",
-      data: { type:docType, fileName: req.file.filename, fileUrl }
+      data: { type: docType, fileName: req.file.filename, fileUrl },
     });
-
   } catch (error) {
     console.error("Upload error:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
-
 const createShareLink = async (req, res) => {
   try {
     const userId = req.userId;
- const expiresInHours = Number(req.body?.expiresInHours) || 24;
+    const expiresInHours = Number(req.body?.expiresInHours) || 24;
     const token = crypto.randomBytes(32).toString("hex");
 
-    const expiresAt = new Date(
-      Date.now() + expiresInHours * 60 * 60 * 1000
-    );
+    const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
 
-   const newP =  await ProfileShare.create({
+    const newP = await ProfileShare.create({
       userId,
       token,
-      expiresAt
+      expiresAt,
     });
-console.log(newP)
+    console.log(newP);
     const baseUrl = process.env.FRONTEND_URL;
     const shareUrl = `${baseUrl}/share/${token}`;
 
     return res.json({
       success: true,
       shareUrl,
-      expiresAt
+      expiresAt,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
-
 
 const getSharedProfile = async (req, res) => {
   try {
@@ -247,41 +239,35 @@ const getSharedProfile = async (req, res) => {
 
     const share = await ProfileShare.findOne({
       token,
-      isActive: true
+      isActive: true,
     });
-console.log(share,"g")
+    console.log(share, "g");
     if (!share) {
       return res.status(404).json({
         success: false,
-        message: "Link expired or invalid"
+        message: "Link expired or invalid",
       });
     }
 
     if (new Date() > share.expiresAt) {
       return res.status(410).json({
         success: false,
-        message: "Link expired"
+        message: "Link expired",
       });
     }
 
-    const buildUserIdQuery = (userId) => {
-  if (mongoose.Types.ObjectId.isValid(userId)) {
-    return {
-      $in: [userId, new mongoose.Types.ObjectId(userId)]
-    };
-  }
-  return userId;
-};
-console.log(buildUserIdQuery(share.userId),"d")
+    console.log(share.userId, "d");
 
     const profile = await StudentProfile.findOne({
-  userId: buildUserIdQuery(share.userId)
-}).lean();
+      userId: share.userId,
+    }).lean();
+
+    console.log(profile, "SD");
 
     if (!profile) {
       return res.status(404).json({
         success: false,
-        message: "Profile not found"
+        message: "Profile not found",
       });
     }
 
@@ -291,18 +277,20 @@ console.log(buildUserIdQuery(share.userId),"d")
 
     return res.json({
       success: true,
-      data: profile
+      data: profile,
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
 
 module.exports = {
   upsertStudentProfile,
-  getStudentProfile,uploadDocControler ,createShareLink ,getSharedProfile
+  getStudentProfile,
+  uploadDocControler,
+  createShareLink,
+  getSharedProfile,
 };
