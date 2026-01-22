@@ -1,7 +1,7 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
-
+const mongoose =require("mongoose")
 module.exports = function (env) {
   const clientID = env.GOOGLE_CLIENT_ID;
   const clientSecret = env.GOOGLE_CLIENT_SECRET;
@@ -25,6 +25,7 @@ module.exports = function (env) {
             const email = (profile.emails && profile.emails[0] && profile.emails[0].value) || '';
 
             const user = await User.create({
+             _id: new mongoose.Types.ObjectId().toString(),
               googleId: profile.id,
               displayName: profile.displayName,
               email,
