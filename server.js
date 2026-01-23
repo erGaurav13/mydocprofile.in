@@ -1,5 +1,6 @@
 const app = require("./app");
 const mongoose = require("mongoose");
+const { sendWelcomeEmail } = require("./emailService/send.email");
 
 const port = process.env.PORT || 3000;
 
@@ -20,5 +21,6 @@ if (process.env.MONGO_URI) {
 }
 
 app.listen(port, () => {
+  sendWelcomeEmail({to:"ergauravkumar02071998@gmail.com",name:"gaurav"})
   console.log(`Server listening on port ${port}`);
 });
