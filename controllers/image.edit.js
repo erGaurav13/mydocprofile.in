@@ -59,9 +59,8 @@ exports.uploadImage = async (req, res) => {
 exports.getImagePreview = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id,"id-->")
-   const image = await Image.findById(new mongoose.Types.ObjectId(id));
-console.log(image,"IMAGE-->")
+    const image = await Image.findById(id);
+
     if (!image) {
       return res.status(404).json({ error: 'Image not found' });
     }
