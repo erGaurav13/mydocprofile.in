@@ -287,10 +287,112 @@ const getSharedProfile = async (req, res) => {
   }
 };
 
+// Get all share links for the current user
+const getAllShareLinks = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const shareLinks = await ProfileShare.find({
+      userId,
+      isActive: true,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Calculate if each link is expired
+    const linksWithStatus = shareLinks.map((link) => ({
+      ...link,
+      isExpired: new Date() > link.expiresAt,
+      daysLeft: Math.max(
+        0,
+        Math.ceil((link.expiresAt - new Date()) / (1000 * 60 * 60 * 24))
+      ),
+    }));
+
+    return res.json({
+      success: true,
+      data: linksWithStatus,
+      count: linksWithStatus.length,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Delete a specific share link
+const deleteShareLink = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { token } = req.params;
+
+    const share = await ProfileShare.findOne({
+      token,
+      userId,
+    });
+
+    if (!share) {
+      return res.status(404).json({
+        success: false,
+        message: "Share link not found",
+      });
+    }
+
+    // Soft delete by setting isActive to false
+    share.isActive = false;
+    await share.save();
+
+    // Or hard delete if you prefer:
+    // await ProfileShare.deleteOne({ token, userId });
+
+    return res.json({
+      success: true,
+      message: "Share link deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Delete all share links for the current user
+const deleteAllShareLinks = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // Soft delete all links
+   const result=  await ProfileShare.updateMany(
+      { userId, isActive: true },
+      { isActive: false }
+    );
+
+    // Or hard delete all links:
+    // await ProfileShare.deleteMany({ userId });
+
+    return res.json({
+      success: true,
+      message: "All share links deleted successfully",
+      deletedCount: result.modifiedCount || result.deletedCount,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   upsertStudentProfile,
   getStudentProfile,
   uploadDocControler,
   createShareLink,
   getSharedProfile,
+  getAllShareLinks,
+  deleteShareLink,
+  deleteAllShareLinks
 };
