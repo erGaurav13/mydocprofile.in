@@ -2,7 +2,7 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs').promises;
 const Image = require('../models/image.model');
-let backendImg='https://mydocprofile-in.onrender.com'
+let backendImg='https://mydocprofile.in/api'
 // Ensure uploads directory exists
 const ensureUploadsDir = async () => {
   const uploadsDir = path.join(__dirname, '..', 'uploads');
