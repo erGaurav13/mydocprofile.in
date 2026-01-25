@@ -8,7 +8,7 @@ const sendWelcomeEmail = async ({ to, name }) => {
     const { subject, html } = EmailTemplate.welcome({ name });
 
     const info = await transporter.sendMail({
-      from: `MyDocProfile Team`,
+      from: `support@mydocprofile.in`,
       to,
       subject,
       html,
