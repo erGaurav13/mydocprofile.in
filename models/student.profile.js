@@ -22,9 +22,11 @@ const EducationSchema = new mongoose.Schema(
       required: true,
     },
     marks: MarksSchema,
+    certificateNo: String,
+    school: String,
   },
   { _id: false }
-); 
+);
 
 const QualificationSchema = new mongoose.Schema(
   {
@@ -70,7 +72,12 @@ const StudentProfileSchema = new mongoose.Schema(
       gender: String,
       father: String,
       mother: String,
-      aadhaar: { type: String, required: true }, // encrypt later
+      aadhaar: { type: String, required: false }, // encrypt later
+      pancard: { type: String, required: false }, // encrypt later
+      categ: {
+        type: String,
+        enum: ["GEN", "OBC", "OBC-NCL", "SC", "ST", "EWS"],
+      },
       address1: String,
       address2: String,
       state: String,
